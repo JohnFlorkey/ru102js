@@ -1,5 +1,5 @@
-const redis = require('./redis_client');
-const keyGenerator = require('./redis_key_generator');
+const redis = require("./redis_client");
+const keyGenerator = require("./redis_key_generator");
 
 /**
  * Takes a flat key/value pairs object representing a Redis hash, and
@@ -20,7 +20,7 @@ const remap = (siteHash) => {
   remappedSiteHash.capacity = parseFloat(siteHash.capacity, 10);
 
   // coordinate is optional.
-  if (siteHash.hasOwnProperty('lat') && siteHash.hasOwnProperty('lng')) {
+  if (siteHash.hasOwnProperty("lat") && siteHash.hasOwnProperty("lng")) {
     remappedSiteHash.coordinate = {
       lat: parseFloat(siteHash.lat),
       lng: parseFloat(siteHash.lng),
@@ -46,7 +46,7 @@ const remap = (siteHash) => {
 const flatten = (site) => {
   const flattenedSite = { ...site };
 
-  if (flattenedSite.hasOwnProperty('coordinate')) {
+  if (flattenedSite.hasOwnProperty("coordinate")) {
     flattenedSite.lat = flattenedSite.coordinate.lat;
     flattenedSite.lng = flattenedSite.coordinate.lng;
     delete flattenedSite.coordinate;
@@ -85,7 +85,7 @@ const findById = async (id) => {
 
   const siteHash = await client.hgetallAsync(siteKey);
 
-  return (siteHash === null ? siteHash : remap(siteHash));
+  return siteHash === null ? siteHash : remap(siteHash);
 };
 
 /* eslint-disable arrow-body-style */
@@ -96,7 +96,18 @@ const findById = async (id) => {
  */
 const findAll = async () => {
   // START CHALLENGE #1
-  return [];
+  const client = redis.getClient();
+  const sitesKey = keyGenerator.getSiteIDsKey();
+  const sites = [];
+
+  const siteIDs = await client.smembersAsync(sitesKey);
+
+  for (const key of siteIDs) {
+    const siteHash = await client.hgetallAsync(key);
+    if (siteHash) sites.push(remap(siteHash));
+  }
+
+  return sites;
   // END CHALLENGE #1
 };
 /* eslint-enable */
