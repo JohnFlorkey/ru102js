@@ -1,7 +1,7 @@
-const roundTo = require('round-to');
-const redis = require('./redis_client');
-const keyGenerator = require('./redis_key_generator');
-const timeUtils = require('../../../utils/time_utils');
+const roundTo = require("round-to");
+const redis = require("./redis_client");
+const keyGenerator = require("./redis_key_generator");
+const timeUtils = require("../../../utils/time_utils");
 
 const metricIntervalSeconds = 60;
 const metricsPerDay = metricIntervalSeconds * 24;
@@ -23,7 +23,8 @@ const daySeconds = 24 * 60 * 60;
  * @returns {string} - String containing <measurement>-<minuteOfDay>.
  * @private
  */
-const formatMeasurementMinute = (measurement, minuteOfDay) => `${roundTo(measurement, 2)}:${minuteOfDay}`;
+const formatMeasurementMinute = (measurement, minuteOfDay) =>
+  `${roundTo(measurement, 2)}:${minuteOfDay}`;
 /* eslint-enable */
 
 /**
@@ -34,7 +35,7 @@ const formatMeasurementMinute = (measurement, minuteOfDay) => `${roundTo(measure
  * @private
  */
 const extractMeasurementMinute = (measurementMinute) => {
-  const arr = measurementMinute.split(':');
+  const arr = measurementMinute.split(":");
   return {
     value: parseFloat(arr[0]),
     minute: parseInt(arr[1], 10),
@@ -59,6 +60,12 @@ const insertMetric = async (siteId, metricValue, metricName, timestamp) => {
   const minuteOfDay = timeUtils.getMinuteOfDay(timestamp);
 
   // START Challenge #2
+  await client.zaddAsync(
+    metricKey,
+    minuteOfDay,
+    formatMeasurementMinute(metricValue, minuteOfDay)
+  );
+  await client.expireAsync(metricKey, metricExpirationSeconds);
   // END Challenge #2
 };
 /* eslint-enable */
@@ -108,9 +115,24 @@ const getMeasurementsForDate = async (siteId, metricUnit, timestamp, limit) => {
  */
 const insert = async (meterReading) => {
   await Promise.all([
-    insertMetric(meterReading.siteId, meterReading.whGenerated, 'whGenerated', meterReading.dateTime),
-    insertMetric(meterReading.siteId, meterReading.whUsed, 'whUsed', meterReading.dateTime),
-    insertMetric(meterReading.siteId, meterReading.tempC, 'tempC', meterReading.dateTime),
+    insertMetric(
+      meterReading.siteId,
+      meterReading.whGenerated,
+      "whGenerated",
+      meterReading.dateTime
+    ),
+    insertMetric(
+      meterReading.siteId,
+      meterReading.whUsed,
+      "whUsed",
+      meterReading.dateTime
+    ),
+    insertMetric(
+      meterReading.siteId,
+      meterReading.tempC,
+      "tempC",
+      meterReading.dateTime
+    ),
   ]);
 };
 
@@ -125,9 +147,11 @@ const insert = async (meterReading) => {
  * @returns {Promise} - Promise resolving to an array of measurement objects.
  */
 const getRecent = async (siteId, metricUnit, timestamp, limit) => {
-  if (limit > (metricsPerDay * maxMetricRetentionDays)) {
-    const err = new Error(`Cannot request more than ${maxMetricRetentionDays} days of minute level data.`);
-    err.name = 'TooManyMetricsError';
+  if (limit > metricsPerDay * maxMetricRetentionDays) {
+    const err = new Error(
+      `Cannot request more than ${maxMetricRetentionDays} days of minute level data.`
+    );
+    err.name = "TooManyMetricsError";
 
     throw err;
   }
@@ -143,7 +167,7 @@ const getRecent = async (siteId, metricUnit, timestamp, limit) => {
       siteId,
       metricUnit,
       currentTimestamp,
-      count,
+      count
     );
     /* eslint-enable */
 
