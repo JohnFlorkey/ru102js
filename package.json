@@ -42,6 +42,6 @@
     "nodemon": "^2.0.13"
   },
   "jest": {
-    "testTimeout": 60000
+    "testTimeout": 50000
   }
 }

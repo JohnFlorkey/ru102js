@@ -1,5 +1,5 @@
-const redis = require('./redis_client');
-const keyGenerator = require('./redis_key_generator');
+const redis = require("./redis_client");
+const keyGenerator = require("./redis_key_generator");
 
 /* eslint-disable no-unused-vars */
 const globalMaxFeedLength = 10000;
@@ -125,6 +125,22 @@ const insert = async (meterReading) => {
   const pipeline = client.batch();
 
   // START Challenge #6
+  pipeline.xadd(
+    keyGenerator.getGlobalFeedKey(),
+    "maxlen",
+    "~",
+    globalMaxFeedLength,
+    "*",
+    ...fields
+  );
+  pipeline.xadd(
+    keyGenerator.getFeedKey(meterReading.siteId),
+    "maxlen",
+    "~",
+    globalMaxFeedLength,
+    "*",
+    ...fields
+  );
   // END Challenge #6
 
   await pipeline.execAsync();
@@ -139,7 +155,7 @@ const insert = async (meterReading) => {
  */
 const getRecent = async (key, limit) => {
   const client = redis.getClient();
-  const response = await client.xrevrangeAsync(key, '+', '-', 'COUNT', limit);
+  const response = await client.xrevrangeAsync(key, "+", "-", "COUNT", limit);
 
   return unpackStreamEntries(response);
 };
@@ -149,10 +165,8 @@ const getRecent = async (key, limit) => {
  * @param {number} limit - the maximum number of readings to return.
  * @returns {Promise} - Promise that resolves to an array of meter reading objects.
  */
-const getRecentGlobal = async limit => getRecent(
-  keyGenerator.getGlobalFeedKey(),
-  limit,
-);
+const getRecentGlobal = async (limit) =>
+  getRecent(keyGenerator.getGlobalFeedKey(), limit);
 
 /**
  * Get recent meter readings for a specific solar sites.
@@ -160,10 +174,8 @@ const getRecentGlobal = async limit => getRecent(
  * @param {*} limit - the maximum number of readings to return.
  * @returns {Promise} - Promise that resolves to an array of meter reading objects.
  */
-const getRecentForSite = async (siteId, limit) => getRecent(
-  keyGenerator.getFeedKey(siteId),
-  limit,
-);
+const getRecentForSite = async (siteId, limit) =>
+  getRecent(keyGenerator.getFeedKey(siteId), limit);
 
 module.exports = {
   insert,

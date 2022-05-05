@@ -1,12 +1,12 @@
-const config = require('better-config');
+const config = require("better-config");
 
-config.set('../config.json');
+config.set("../config.json");
 
-const redis = require('../src/daos/impl/redis/redis_client');
-const redisFeedDAO = require('../src/daos/impl/redis/feed_dao_redis_impl');
-const keyGenerator = require('../src/daos/impl/redis/redis_key_generator');
+const redis = require("../src/daos/impl/redis/redis_client");
+const redisFeedDAO = require("../src/daos/impl/redis/feed_dao_redis_impl");
+const keyGenerator = require("../src/daos/impl/redis/redis_key_generator");
 
-const testSuiteName = 'feed_dao_redis_impl';
+const testSuiteName = "feed_dao_redis_impl";
 
 const testKeyPrefix = `test:${testSuiteName}`;
 
@@ -14,7 +14,7 @@ keyGenerator.setPrefix(testKeyPrefix);
 const client = redis.getClient();
 
 const generateMeterReading = (val, siteId) => ({
-  siteId: (siteId || 999),
+  siteId: siteId || 999,
   dateTime: new Date().getTime(),
   tempC: val,
   whUsed: val,
@@ -50,8 +50,7 @@ const insertAndReadBackFromStream = async (siteId) => {
   // Test feed with and without limit.
   let meterReadings = await (siteId
     ? redisFeedDAO.getRecentForSite(siteId, 100)
-    : redisFeedDAO.getRecentGlobal(100)
-  );
+    : redisFeedDAO.getRecentGlobal(100));
 
   if (siteId) {
     // Site specific stream.
@@ -75,8 +74,7 @@ const insertAndReadBackFromStream = async (siteId) => {
 
   meterReadings = await (siteId
     ? redisFeedDAO.getRecentForSite(siteId, 1)
-    : redisFeedDAO.getRecentGlobal(1)
-  );
+    : redisFeedDAO.getRecentGlobal(1));
 
   expect(meterReadings.length).toBe(1);
   expect(meterReadings[0].siteId).toBe(testMeterReading2.siteId);
@@ -86,19 +84,19 @@ const insertAndReadBackFromStream = async (siteId) => {
 };
 
 // This test is for Challenge #6.
-test.skip(`${testSuiteName}: insert and read back from global stream`, async () => {
+test(`${testSuiteName}: insert and read back from global stream`, async () => {
   await insertAndReadBackFromStream();
 });
 
 // This test is for Challenge #6.
-test.skip(`${testSuiteName}: read stream for site that does not exist`, async () => {
+test(`${testSuiteName}: read stream for site that does not exist`, async () => {
   const meterReadings = await redisFeedDAO.getRecentForSite(-1, 100);
 
   expect(meterReadings.length).toBe(0);
 });
 
 // This test is for Challenge #6.
-test.skip(`${testSuiteName}: insert and read back from site specific stream`, async () => {
+test(`${testSuiteName}: insert and read back from site specific stream`, async () => {
   await insertAndReadBackFromStream(998);
 });
 
